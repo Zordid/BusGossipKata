@@ -37,6 +37,17 @@ data class Driver(val name: String,
  */
 class Simulation(private val drivers: Collection<Driver>) {
 
+    companion object {
+        fun createFromString(definition: String): Simulation {
+            var count = 0
+            val myDrivers = definition.split(Regex("\\n")).map {
+                Driver("Driver ${(++count)}", it.trim().split(Regex("\\s+")).map { it.toInt() })
+            }
+
+            return Simulation(myDrivers)
+        }
+    }
+
     private val everyGossipInTheWorld: Set<Gossip> by lazy {
         val gossip = mutableSetOf<Gossip>()
         drivers.forEach { gossip.addAll(it.knowsAbout) }
@@ -77,7 +88,7 @@ class Simulation(private val drivers: Collection<Driver>) {
 
             if (everybodyKnowsEverything()) {
                 println("Everybody is informed at i=$i")
-                return i
+                return i+1
             }
 
         }
@@ -97,15 +108,7 @@ class Simulation(private val drivers: Collection<Driver>) {
 
 fun main(args: Array<String>) {
 
-    val challenge1 = " 7 11 2 2 4 8 2 2\n" +
-            "    3 0 11 8\n" +
-            "    5 11 8 10 3 11\n" +
-            "    5 9 2 5 0 3\n" +
-            "    7 4 8 2 8 1 0 5\n" +
-            "    3 6 8 9\n" +
-            "    4 2 11 3 3"
-
-    val challenge2 = "  12 23 15 2 8 20 21 3 23 3 27 20 0\n" +
+    val input = "  12 23 15 2 8 20 21 3 23 3 27 20 0\n" +
             "    21 14 8 20 10 0 23 3 24 23 0 19 14 12 10 9 12 12 11 6 27 5\n" +
             "    8 18 27 10 11 22 29 23 14\n" +
             "    13 7 14 1 9 14 16 12 0 10 13 19 16 17\n" +
@@ -120,16 +123,7 @@ fun main(args: Array<String>) {
             "    24 29 4 17 2 0 8 19 11 28 13 4 16 5 15 25 16 5 6 1 0 19 7 4 6\n" +
             "    16 25 15 17 20 27 1 11 1 18 14 23 27 25 26 17 1"
 
-    val w = createSimulationFromString(challenge2)
+    val w = Simulation.createFromString(input)
     w.run()
 
-}
-
-fun createSimulationFromString(matrix: String): Simulation {
-    var count = 0
-    val myDrivers = matrix.split(Regex("\\n")).map {
-        Driver("Driver ${(++count)}", it.trim().split(Regex("\\s+")).map { it.toInt() })
-    }
-
-    return Simulation(myDrivers)
 }
