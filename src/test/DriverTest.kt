@@ -1,35 +1,41 @@
 import org.testng.Assert
+import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
 class DriverTest {
 
+    lateinit var driver1: Driver
+    lateinit var driver2: Driver
+
+    @BeforeMethod
+    fun init() {
+        driver1 = Driver("Max", listOf(1, 2, 3))
+        driver2 = Driver("Moritz", listOf(2, 1, 3))
+    }
+
     @Test
     fun `a driver knows one inital gossip`() {
-        val driver = Driver("Max", emptyList())
-        Assert.assertEquals(driver.knowsAbout, setOf(Gossip("Max's gossip")))
+        Assert.assertEquals(driver1.knowsGossipsFrom, setOf(driver1))
     }
 
     @Test
     fun `hearing about a new gossip adds new gossip`() {
-        val d = Driver("Max", emptyList())
-        Assert.assertFalse(d.haveYouHeardAboutThis(listOf(Gossip("thisandthat"))))
-        Assert.assertEquals(d.knowsAbout.size, 2)
+        Assert.assertFalse(driver1.haveYouHeardAboutGossipsFrom(listOf(driver2)))
+        Assert.assertEquals(driver1.knowsGossipsFrom.size, 2)
     }
 
     @Test
     fun `hearing gossip twice is lame`() {
-        val d = Driver("Max", emptyList())
-        Assert.assertFalse(d.haveYouHeardAboutThis(listOf(Gossip("thisandthat"))))
-        Assert.assertEquals(d.knowsAbout.size, 2)
-        Assert.assertTrue(d.haveYouHeardAboutThis(listOf(Gossip("thisandthat"))))
-        Assert.assertEquals(d.knowsAbout.size, 2)
+        Assert.assertFalse(driver1.haveYouHeardAboutGossipsFrom(listOf(driver2)))
+        Assert.assertEquals(driver1.knowsGossipsFrom.size, 2)
+        Assert.assertTrue(driver1.haveYouHeardAboutGossipsFrom(listOf(driver2)))
+        Assert.assertEquals(driver1.knowsGossipsFrom.size, 2)
     }
 
     @Test
     fun `hearing about old stuff is boring`() {
-        val d = Driver("Max", emptyList())
-        Assert.assertTrue(d.haveYouHeardAboutThis(listOf(Gossip("Max's gossip"))))
-        Assert.assertEquals(d.knowsAbout.size, 1)
+        Assert.assertTrue(driver1.haveYouHeardAboutGossipsFrom(listOf(driver1)))
+        Assert.assertEquals(driver1.knowsGossipsFrom.size, 1)
     }
 
     @Test

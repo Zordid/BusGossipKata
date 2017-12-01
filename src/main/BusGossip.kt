@@ -1,22 +1,17 @@
 /**
- * Assumption to have each Gossip as its own object.
- */
-data class Gossip(val name: String)
-
-/**
  * A bus driver in the game.
  */
-data class Driver(val name: String,
-                  private val route: List<Int>,
-                  private val gossips: Set<Gossip> = setOf(Gossip("$name's gossip"))) {
+data class Driver(val name: String, private val route: List<Any>) {
 
-    val knowsAbout = gossips.toMutableSet()
-    val whereAreYou: Int
+    // at starts, every driver only knows his own gossips
+    val knowsGossipsFrom = mutableSetOf(this)
+    val whereAreYou: Any
         get() = route[index % route.size]
 
     private var index = 0
 
-    fun haveYouHeardAboutThis(gossips: Collection<Gossip>) = !knowsAbout.addAll(gossips)
+    fun haveYouHeardAboutGossipsFrom(otherDrivers: Collection<Driver>) =
+            !knowsGossipsFrom.addAll(otherDrivers)
 
     fun drive() {
         index++
@@ -33,7 +28,7 @@ class Simulation(private val drivers: Collection<Driver>) {
         fun createFromString(definition: String): Simulation {
             var count = 0
             val myDrivers = definition.split(Regex("\\n")).map {
-                Driver("Driver ${(++count)}", it.trim().split(Regex("\\s+")).map { it.toInt() })
+                Driver("Driver ${(++count)}", it.trim().split(Regex("\\s+")).map { it })
             }
 
             return Simulation(myDrivers)
@@ -47,26 +42,20 @@ class Simulation(private val drivers: Collection<Driver>) {
             println("--- The time is $i ---")
 
             // where is everybody
-            val positions: MutableMap<Int, MutableSet<Driver>> = mutableMapOf()
-            for (d in drivers) {
-                if (!positions.containsKey(d.whereAreYou))
-                    positions[d.whereAreYou] = mutableSetOf(d)
-                else
-                    positions[d.whereAreYou]?.add(d)
-            }
+            val positions = drivers.groupBy { it.whereAreYou }
 
-            // exchange gossip
-            for (meeting in positions.values.filter { it.size > 1 }) {
-                println("${meeting.map { it.name }} meet...")
-                val allGossip = meeting.flatMap { it.knowsAbout }
-                meeting.forEach {
-                    it.haveYouHeardAboutThis(allGossip)
+            // exchange gossip if more than 1 driver is at a position
+            for ((where, who) in positions.filter { it.value.size > 1 }) {
+                println("${who.joinToString(", ") { it.name }} meet at $where...")
+                val allGossip = who.flatMap { it.knowsGossipsFrom }.toSet()
+                who.forEach {
+                    it.haveYouHeardAboutGossipsFrom(allGossip)
                 }
             }
 
             if (everybodyKnowsEverything()) {
                 println("Everybody is informed at i=$i")
-                return i+1
+                return i + 1
             }
 
             // move on
@@ -79,7 +68,7 @@ class Simulation(private val drivers: Collection<Driver>) {
     }
 
     private fun everybodyKnowsEverything() =
-            drivers.all { it.knowsAbout.size == drivers.size }
+            drivers.all { it.knowsGossipsFrom.size == drivers.size }
 
 }
 
